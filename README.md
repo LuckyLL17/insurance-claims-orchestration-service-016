@@ -13,6 +13,20 @@
 - 设备、车辆、人员、维修厂、账户的风险关联图
 - 调查任务租约、过期提交保护和重派
 - 单案件及跨案件风险解释
+- 车辆全损评估：估损、维修阈值与市场估值的冻结依据和估值版本链
+- 残值处置：多回收报价的接收、选择、撤回、过期、流标、成交回调与成交后撤销
+- 残值收入、车辆所有权与支付账本联动，估值-报价-赔付全链路因果查询
+
+## 全损与残值处置 API
+
+- `POST /claims/:id/valuations` 记录车辆市场估值（新版本自动作废旧版本上的未决报价）
+- `POST /claims/:id/total-loss/evaluate` 按估损与维修阈值评估全损并冻结评估依据
+- `GET /claims/:id/total-loss` 查询当前评估、历史评估与估值版本链
+- `POST /claims/:id/salvage/bids` 接收回收报价；`POST .../bids/:bidId/select|withdraw` 选择或撤回
+- `POST /claims/:id/salvage/expire` 按时间点作废过期报价；`POST .../salvage/fail` 流标
+- `POST /claims/:id/salvage/deal` 成交回调（按 `callbackKey` 幂等）；`POST .../deal/reverse` 成交后撤销
+- `GET /claims/:id/salvage` 查询处置任务、报价、成交、所有权与残值收入
+- `GET /claims/:id/lineage` 查询估值、报价与赔付变化的因果关系链
 
 ## 启动
 

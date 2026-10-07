@@ -4,9 +4,10 @@ import { PaymentService } from '../application/payment-service';
 import { RiskService } from '../application/risk-service';
 import { TaskService } from '../application/task-service';
 import { ReplayService } from '../application/replay-service';
+import { TotalLossService } from '../application/total-loss-service';
 import { RuleEngine } from '../domain/rules';
 
-export interface AppContext { claims: ClaimService; payments: PaymentService; risks: RiskService; tasks: TaskService; replay: ReplayService; rules: RuleEngine; }
+export interface AppContext { claims: ClaimService; payments: PaymentService; risks: RiskService; tasks: TaskService; replay: ReplayService; rules: RuleEngine; totalLoss: TotalLossService; }
 const json = (res: ServerResponse, status: number, value: unknown) => { res.writeHead(status, { 'content-type': 'application/json; charset=utf-8' }); res.end(JSON.stringify(value, (_k, v) => v instanceof Set ? [...v] : v)); };
 const body = async (req: IncomingMessage): Promise<any> => { let data = ''; for await (const chunk of req) data += chunk; return data ? JSON.parse(data) : {}; };
 const parts = (url: string) => url.split('?')[0].split('/').filter(Boolean);
@@ -29,6 +30,18 @@ export async function route(req: IncomingMessage, res: ServerResponse, app: AppC
     if (method === 'POST' && path[2] === 'tasks') return json(res, 201, app.tasks.create(id, input.kind));
     if (method === 'GET' && path[2] === 'tasks') return json(res, 200, app.tasks.list(id));
     if (method === 'POST' && path[2] === 'replay') return json(res, 200, app.replay.execute(id, input.until));
+    if (method === 'GET' && path[2] === 'lineage') return json(res, 200, app.replay.lineage(id));
+    if (method === 'POST' && path[2] === 'valuations') return json(res, 201, app.totalLoss.recordValuation(id, input, 'api', req.headers['idempotency-key'] as string));
+    if (method === 'GET' && path[2] === 'total-loss' && path.length === 3) return json(res, 200, app.totalLoss.summary(id));
+    if (method === 'POST' && path[2] === 'total-loss' && path[3] === 'evaluate') return json(res, 200, app.totalLoss.evaluate(id, input, 'api', req.headers['idempotency-key'] as string));
+    if (method === 'GET' && path[2] === 'salvage' && path.length === 3) return json(res, 200, app.totalLoss.salvage(id));
+    if (method === 'POST' && path[2] === 'salvage' && path[3] === 'bids' && path.length === 4) return json(res, 201, app.totalLoss.receiveBid(id, input, 'api', req.headers['idempotency-key'] as string));
+    if (method === 'POST' && path[2] === 'salvage' && path[3] === 'bids' && path[5] === 'select') return json(res, 200, app.totalLoss.selectBid(id, path[4], 'api', req.headers['idempotency-key'] as string));
+    if (method === 'POST' && path[2] === 'salvage' && path[3] === 'bids' && path[5] === 'withdraw') return json(res, 200, app.totalLoss.withdrawBid(id, path[4], 'api', req.headers['idempotency-key'] as string));
+    if (method === 'POST' && path[2] === 'salvage' && path[3] === 'expire') return json(res, 200, app.totalLoss.expireBids(id, input.at, 'api'));
+    if (method === 'POST' && path[2] === 'salvage' && path[3] === 'fail') return json(res, 200, app.totalLoss.failDisposal(id, input, 'api', req.headers['idempotency-key'] as string));
+    if (method === 'POST' && path[2] === 'salvage' && path[3] === 'deal' && path[4] === 'reverse') return json(res, 200, app.totalLoss.reverseDeal(id, input, 'api', req.headers['idempotency-key'] as string));
+    if (method === 'POST' && path[2] === 'salvage' && path[3] === 'deal') return json(res, 200, app.totalLoss.completeDeal(id, input, 'api', req.headers['idempotency-key'] as string));
     return json(res, 404, { error: 'route not found' });
   } catch (error) { json(res, 400, { error: error instanceof Error ? error.message : 'unknown error' }); }
 }

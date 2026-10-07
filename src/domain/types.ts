@@ -3,6 +3,8 @@ export type ClaimStatus =
   | 'investigating'
   | 'awaiting_documents'
   | 'ready_for_adjustment'
+  | 'total_loss_candidate'
+  | 'salvage_disposal'
   | 'partially_paid'
   | 'settled'
   | 'reopened'
@@ -18,6 +20,18 @@ export type ClaimEventType =
   | 'documents.requested'
   | 'documents.received'
   | 'risk.assessed'
+  | 'vehicle.valuation.recorded'
+  | 'total_loss.evaluated'
+  | 'salvage.disposal.started'
+  | 'salvage.bid.received'
+  | 'salvage.bid.withdrawn'
+  | 'salvage.bid.expired'
+  | 'salvage.bid.selected'
+  | 'salvage.disposal.failed'
+  | 'salvage.deal.completed'
+  | 'salvage.deal.reversed'
+  | 'salvage.income.posted'
+  | 'vehicle.ownership.updated'
   | 'adjustment.approved'
   | 'payment.authorized'
   | 'payment.settled'
@@ -34,6 +48,13 @@ export interface PaymentEntry { id: string; kind: 'authorization' | 'settlement'
 export interface RuleSnapshot { version: string; frozenAt: string; ruleIds: string[]; }
 export interface RiskSignal { code: string; score: number; explanation: string; participants: string[]; }
 export interface AuditEntry { sequence: number; eventId: string; type: ClaimEventType; occurredAt: string; actor: string; summary: string; }
+
+export interface VehicleValuation { id: string; version: number; marketValueMinor: number; currency: string; assessor: string; assessedAt: string; supersedes?: string; }
+export interface TotalLossAssessment { id: string; valuationId: string; valuationVersion: number; repairEstimateMinor: number; thresholdRatio: number; thresholdMinor: number; marketValueMinor: number; ruleVersion?: string; isTotalLoss: boolean; decidedAt: string; basisHash: string; supersedesAssessmentId?: string; }
+export interface SalvageDisposal { taskId: string; assessmentId: string; status: 'collecting' | 'selected' | 'completed' | 'failed'; createdAt: string; }
+export interface SalvageBid { id: string; bidder: string; amountMinor: number; currency: string; valuationVersion: number; receivedAt: string; validUntil: string; status: 'open' | 'selected' | 'withdrawn' | 'expired' | 'lost'; expiredReason?: string; }
+export interface SalvageDeal { id: string; bidId: string; amountMinor: number; currency: string; completedAt: string; callbackKey: string; status: 'completed' | 'reversed'; reversedAt?: string; reversalReason?: string; }
+export interface OwnershipRecord { status: 'pending' | 'transferred_to_insurer' | 'retained_by_owner'; decidedAt?: string; causedBy?: string; }
 
 export interface ClaimState {
   id: string;
@@ -54,6 +75,15 @@ export interface ClaimState {
   riskScore: number;
   payments: PaymentEntry[];
   approvedMinor: number;
+  valuations: VehicleValuation[];
+  assessments: TotalLossAssessment[];
+  currentAssessmentId?: string;
+  disposal?: SalvageDisposal;
+  bids: SalvageBid[];
+  selectedBidId?: string;
+  deal?: SalvageDeal;
+  ownership: OwnershipRecord;
+  salvageIncomeMinor: number;
   audit: AuditEntry[];
   processedEventIds: Set<string>;
   version: number;
