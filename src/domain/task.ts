@@ -1,5 +1,5 @@
 import { newId, iso } from './ids';
-export interface InvestigationTask { id: string; claimId: string; kind: 'survey' | 'document_review' | 'fraud_review'; status: 'queued' | 'leased' | 'submitted' | 'expired'; version: number; leaseOwner?: string; leaseUntil?: string; result?: unknown; createdAt: string; }
+export interface InvestigationTask { id: string; claimId: string; kind: 'survey' | 'document_review' | 'fraud_review' | 'salvage_disposal'; status: 'queued' | 'leased' | 'submitted' | 'expired'; version: number; leaseOwner?: string; leaseUntil?: string; result?: unknown; createdAt: string; }
 export class TaskBoard {
   private tasks = new Map<string, InvestigationTask>();
   create(claimId: string, kind: InvestigationTask['kind']): InvestigationTask { const task = { id: newId('task'), claimId, kind, status: 'queued' as const, version: 1, createdAt: iso() }; this.tasks.set(task.id, task); return structuredClone(task); }
